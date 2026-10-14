@@ -1,7 +1,9 @@
 /* The ☸ KIND chip on the card that holds the local KIND cluster. Composed on
-   core's .card-tag, the same way core's own coloured chips are. */
+   core's .card-tag. A solid brick orange with white text, like core's solid
+   worktree chip, so it stands out in both themes and on a selected card. */
 .card-tag.kind-claim {
-  color: var(--blue-fg);
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
+  color: #fff;
+  background: #b5471b;
+  font-weight: 600;
   cursor: default;
 }
