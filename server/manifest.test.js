@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import manifest, { createWatcher } from './manifest.js';
+import manifest, { createWatcher, RESEND_MS } from './manifest.js';
 import { ClaimStore } from './store.js';
 
 function setup({ sessions = {}, settings = {} } = {}) {
@@ -199,4 +199,14 @@ test('labels use the title the board shows', () => {
   claim({ awSessionId: 'card-a' });
   w.poll(host);
   assert.equal(sent[0].claim.holder, '“KIND cluster lock”');
+});
+
+test('an unchanged claim is sent again after the resend interval', () => {
+  const { host, sent } = setup();
+  let t = 0;
+  const w = createWatcher({ now: () => t });
+  w.poll(host);
+  t = RESEND_MS;
+  w.poll(host);
+  assert.equal(sent.length, 2);
 });

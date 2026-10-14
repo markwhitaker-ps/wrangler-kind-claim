@@ -12,8 +12,13 @@ export const dir = fileURLToPath(new URL('..', import.meta.url));
 
 // Reads the claim file, notices when the holder changes, and tells the board.
 // One per extension load; tests make their own.
+// The board drops anything sent before its socket is open, so a browser that
+// connected after the last change would otherwise wait for the next one.
+export const RESEND_MS = 30_000;
+
 export function createWatcher({ fsImpl = fs, now = () => Date.now() } = {}) {
   let lastSent = null;
+  let lastSentAt = 0;
   // card id -> the title the board shows. `sessions:read` does not carry it,
   // so it comes from the board graph (see the manifest's `graph` hook).
   let titles = new Map();
@@ -74,8 +79,9 @@ export function createWatcher({ fsImpl = fs, now = () => Date.now() } = {}) {
 
     const current = view(host, claim);
     const frame = JSON.stringify(current);
-    if (force || takeover || frame !== lastSent) {
+    if (force || takeover || frame !== lastSent || now() - lastSentAt >= RESEND_MS) {
       lastSent = frame;
+      lastSentAt = now();
       host.broadcast({ claim: current, ...(takeover ? { takeover } : {}), at: now() });
     }
     return { claim: current, takeover };

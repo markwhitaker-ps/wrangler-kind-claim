@@ -86,3 +86,22 @@ test('an unmounted chip is no longer redrawn', () => {
   client.onFrame({ claim: CLAIM });
   assert.equal(el.children.length, 0);
 });
+
+test('hello is sent again until a frame arrives', () => {
+  const sent = [];
+  const timers = [];
+  const client = createClient({ api: { send: (m) => sent.push(m) }, setTimer: (fn) => timers.push(fn), clearTimer() {} });
+  client.hello();
+  timers.shift()();
+  assert.equal(sent.length, 2);
+});
+
+test('hello stops once a frame has arrived', () => {
+  const sent = [];
+  const timers = [];
+  const client = createClient({ api: { send: (m) => sent.push(m) }, setTimer: (fn) => timers.push(fn), clearTimer() {} });
+  client.hello();
+  client.onFrame({ claim: null });
+  timers.shift()();
+  assert.equal(sent.length, 1);
+});

@@ -54,8 +54,15 @@ export function menuItemsFor(claim, session, send) {
   }];
 }
 
-export function createClient({ api, now = () => Date.now() }) {
+// The board drops a send made before its socket is open, which is exactly when
+// register() runs on a page load. Ask again until the first answer arrives.
+export const HELLO_RETRY_MS = 1_000;
+export const HELLO_TRIES = 30;
+
+export function createClient({ api, now = () => Date.now(), setTimer = setTimeout, clearTimer = clearTimeout }) {
   let claim = null;
+  let answered = false;
+  let helloTimer = null;
   // Every chip element on screen and the card it belongs to, so a broadcast can
   // redraw them all without waiting for the board's next render.
   const pills = new Map();
@@ -79,7 +86,14 @@ export function createClient({ api, now = () => Date.now() }) {
       id: 'release',
       items: (session) => menuItemsFor(claim, session, (msg) => api.send(msg)),
     },
+    hello(tries = HELLO_TRIES) {
+      if (answered || tries <= 0) return;
+      api.send({ type: 'kind-claim-hello' });
+      helloTimer = setTimer(() => this.hello(tries - 1), HELLO_RETRY_MS);
+    },
     onFrame(frame) {
+      answered = true;
+      if (helloTimer) clearTimer(helloTimer);
       claim = frame?.claim ?? null;
       redraw();
       const t = frame?.takeover;
@@ -97,6 +111,6 @@ export default {
     slots.register('card.pill', client.pill);
     slots.register('card.action', client.action);
     slots.onMessage((frame) => client.onFrame(frame));
-    api.send({ type: 'kind-claim-hello' });
+    client.hello();
   },
 };
