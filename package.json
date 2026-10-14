@@ -1,0 +1,31 @@
+{
+  "name": "wrangler-kind-claim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shows which Agent Wrangler session is using the local KIND cluster, and warns a session when another takes it over",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node --test 'server/*.test.js' 'public/*.test.js'"
+  },
+  "wranglerExtension": {
+    "id": "kind-claim",
+    "label": "KIND cluster claim",
+    "description": "Shows which session is using the local KIND cluster, and tells a session when another one takes the cluster over.",
+    "author": "Mark Whitaker",
+    "requires": [
+      "sessions:read",
+      "board:broadcast",
+      "mail:send"
+    ],
+    "engines": { "wranglerApi": "^1.23.0" },
+    "homepage": "https://github.com/markwhitaker-ps/wrangler-kind-claim"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markwhitaker-ps/wrangler-kind-claim.git"
+  }
+}
