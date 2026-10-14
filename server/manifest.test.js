@@ -191,3 +191,12 @@ test('a forced poll broadcasts even when nothing changed', () => {
 test('store names are prefixed with the extension name', () => {
   for (const name of Object.keys(manifest.stores)) assert.match(name, /^kindClaim/);
 });
+
+test('labels use the title the board shows', () => {
+  const { host, sent, claim } = setup({ sessions: { 'card-a': A } });
+  const w = createWatcher();
+  w.noteGraph({ sessions: [{ sessionId: 'card-a', label: 'KIND cluster lock' }] });
+  claim({ awSessionId: 'card-a' });
+  w.poll(host);
+  assert.equal(sent[0].claim.holder, '“KIND cluster lock”');
+});

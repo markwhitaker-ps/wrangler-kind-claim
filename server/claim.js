@@ -48,7 +48,7 @@ export function sessionLabel(session) {
   if (!session) return '';
   const firstLine = (session.intent || '').split('\n')[0].trim();
   const intent = firstLine.length > 60 ? `${firstLine.slice(0, 57)}…` : firstLine;
-  return session.name || session.lastLabel || intent || 'an unnamed session';
+  return session.label || session.name || session.lastLabel || intent || 'an unnamed session';
 }
 
 // How a holder reads in a sentence, whether or not it is a card on the board.

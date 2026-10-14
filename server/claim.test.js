@@ -61,3 +61,7 @@ test('holderLabel describes a Claude session outside the wrangler', () => {
 test('takeoverMail tells the agent how to claim the cluster again', () => {
   assert.match(takeoverMail({ to: normaliseClaim({}), toLabel: '“B”' }), /kind-claim\.sh take/);
 });
+
+test('sessionLabel prefers the board title', () => {
+  assert.equal(sessionLabel({ label: 'Board title', name: 'Named' }), 'Board title');
+});

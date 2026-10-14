@@ -14,11 +14,23 @@ export const dir = fileURLToPath(new URL('..', import.meta.url));
 // One per extension load; tests make their own.
 export function createWatcher({ fsImpl = fs, now = () => Date.now() } = {}) {
   let lastSent = null;
+  // card id -> the title the board shows. `sessions:read` does not carry it,
+  // so it comes from the board graph (see the manifest's `graph` hook).
+  let titles = new Map();
+
+  function noteGraph(graph) {
+    if (!Array.isArray(graph?.sessions)) return;
+    titles = new Map(graph.sessions.filter((s) => s?.sessionId && s.label).map((s) => [s.sessionId, s.label]));
+  }
+
+  function withTitle(s) {
+    return s ? { ...s, label: titles.get(s.sessionId) ?? '' } : null;
+  }
 
   function sessionFor(host, claim) {
     if (!claim?.awSessionId) return null;
     const s = host.sessions.get(claim.awSessionId);
-    return s && !s.archived ? s : null;
+    return s && !s.archived ? withTitle(s) : null;
   }
 
   function view(host, claim) {
@@ -31,7 +43,7 @@ export function createWatcher({ fsImpl = fs, now = () => Date.now() } = {}) {
   // followed by a fresh claim is not one: the first session let go.
   function noticeTakeover(host, previous, claim) {
     const toLabel = holderLabel(claim, sessionFor(host, claim));
-    const fromSession = previous.awSessionId ? host.sessions.get(previous.awSessionId) : null;
+    const fromSession = previous.awSessionId ? withTitle(host.sessions.get(previous.awSessionId)) : null;
     const fromLabel = fromSession ? `“${sessionLabel(fromSession)}”` : (previous.label || holderLabel(previous, null));
     host.log(`KIND cluster taken over: ${ownerKey(previous)} -> ${ownerKey(claim)}`);
 
@@ -86,7 +98,7 @@ export function createWatcher({ fsImpl = fs, now = () => Date.now() } = {}) {
     return true;
   }
 
-  return { poll, release };
+  return { poll, release, noteGraph };
 }
 
 const watcher = createWatcher();
@@ -132,6 +144,12 @@ export default {
     { type: 'kind-claim-hello', handler: (msg, host) => { watcher.poll(host, { force: true }); } },
     { type: 'kind-claim-release', handler: (msg, host) => { watcher.release(host, msg?.sessionId); } },
   ],
+
+  // The ~4s board rebuild: keep each card's title for labels. Adds nothing.
+  graph: ({ graph }) => {
+    watcher.noteGraph(graph);
+    return {};
+  },
 
   // The file is tiny and local, so a short poll is cheaper and more reliable than
   // fs.watch, which loses track of a file replaced by rename.
