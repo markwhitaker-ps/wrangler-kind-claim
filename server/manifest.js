@@ -48,7 +48,7 @@ export function createWatcher({ fsImpl = fs, now = () => Date.now() } = {}) {
   function poll(host, { force = false } = {}) {
     const file = claimFileFrom(host.settings.get('claimFile'));
     const claim = readClaim(file, fsImpl);
-    const store = host.stores.state;
+    const store = host.stores.kindClaim;
     const previous = store.owner;
     let takeover = null;
 
@@ -125,7 +125,7 @@ export default {
     },
   ],
 
-  stores: { state: () => new ClaimStore() },
+  stores: { kindClaim: () => new ClaimStore() },
 
   handlers: [
     // A board that just loaded asks rather than waiting for a change.

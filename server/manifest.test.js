@@ -14,7 +14,7 @@ function setup({ sessions = {}, settings = {} } = {}) {
   const host = {
     settings: { get: (k) => ({ claimFile, ...settings })[k] },
     sessions: { get: (id) => sessions[id] ?? null },
-    stores: { state: new ClaimStore({ file: path.join(tmp, 'state.json') }) },
+    stores: { kindClaim: new ClaimStore({ file: path.join(tmp, 'state.json') }) },
     broadcast: (p) => sent.push(p),
     mail: { send: (to, text) => mail.push({ to, text }) },
     log: () => {},
@@ -139,7 +139,7 @@ test('a takeover while the wrangler was down is reported after a restart', () =>
   claim({ awSessionId: 'card-a' });
   createWatcher().poll(host);
   claim({ awSessionId: 'card-b' });
-  host.stores.state = new ClaimStore({ file: host.stores.state.file });
+  host.stores.kindClaim = new ClaimStore({ file: host.stores.kindClaim.file });
   createWatcher().poll(host);
   assert.equal(mail.length, 1);
 });
@@ -148,7 +148,7 @@ test('a restart with an unchanged claim is not a takeover', () => {
   const { host, mail, claim } = setup({ sessions: { 'card-a': A } });
   claim({ awSessionId: 'card-a' });
   createWatcher().poll(host);
-  host.stores.state = new ClaimStore({ file: host.stores.state.file });
+  host.stores.kindClaim = new ClaimStore({ file: host.stores.kindClaim.file });
   createWatcher().poll(host);
   assert.equal(mail.length, 0);
 });
@@ -184,4 +184,10 @@ test('a forced poll broadcasts even when nothing changed', () => {
   w.poll(host);
   w.poll(host, { force: true });
   assert.equal(sent.length, 2);
+});
+
+// Store names share one namespace across every extension, so a generic one
+// like `state` collides with other installed extensions at install time.
+test('store names are prefixed with the extension name', () => {
+  for (const name of Object.keys(manifest.stores)) assert.match(name, /^kindClaim/);
 });
